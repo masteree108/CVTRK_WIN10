@@ -85,9 +85,7 @@ def main(target_path, json_file_path, video_path, algorithm):
     # get bounding box position
     bbox = ()
     rvij = RVIJ.read_vott_id_json(json_file_path)
-    if rvij.read_from_id_json_data():
-        print('read json file failed')
-        sys.exit()
+    rvij.read_from_id_json_data()
 
     timestamp = rvij.get_timestamp()
     get_bbox = rvij.get_boundingBox()

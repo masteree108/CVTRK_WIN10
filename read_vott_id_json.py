@@ -1,118 +1,129 @@
 import os
+import sys
 import json
+import enum
+import log as PYM
+
+class BBOX_ITEM(enum.Enum):
+    height = 0
+    width = 1
+    left = 2
+    top = 3
+
+class VIDEO_SIZE(enum.Enum):
+    W = 0
+    H = 1
 
 class read_vott_id_json():
 # private
-    def __clear_all_parameter_value(self):
-        self.asset_id = ""
-        self.asset_format = ""
-        self.asset_name = ""
-        self.asset_path = ""
-        self.video_size = [3840, 2160]
+    __asset_id = ""
+    __asset_format = ""
+    __asset_name = ""
+    __asset_path = ""
+    __video_size = [3840, 2160]
 
-        self.parent_id = ""
-        self.parent_name = ""
+    __parent_id = ""
+    __parent_name = ""
 
-        self.timestamp = 0
-        self.tags = ""
-        self.regions_id = ""
-        self.boundingBox = [0,0,0,0]
+    __timestamp = 0
+    __tags = ""
+    __regions_id = ""
+    __boundingBox = [0,0,0,0]
 
     def __print_read_parameter_from_json(self):
-        print("asset_id: %s" % self.asset_id)
-        print("asset_format: %s" % self.asset_format)
-        print("asset_name: %s" % self.asset_name)
-        print("asset_path: %s" % self.asset_path)
-        print("width: %d" % self.video_size[0])
-        print("height: %d" % self.video_size[1])
+        self.pym.PY_LOG('D', self.__class__, 'asset_id: %s' % self.__asset_id)
+        self.pym.PY_LOG('D', self.__class__, 'asset_format: %s' % self.__asset_format)
+        self.pym.PY_LOG('D', self.__class__, 'asset_name: %s' % self.__asset_name)
+        self.pym.PY_LOG('D', self.__class__, 'asset_path %s' % self.__asset_path)
+        self.pym.PY_LOG('D', self.__class__, 'video_width: %d' % self.__video_size[VIDEO_SIZE.W.value])
+        self.pym.PY_LOG('D', self.__class__, 'video_height: %d' % self.__video_size[VIDEO_SIZE.H.value])
 
-        print("parent_id: %s" % self.parent_id)
-        print("parent_name: %s" % self.parent_name)
-        print("parent_path: %s" % self.parent_path)
+        self.pym.PY_LOG('D', self.__class__, 'parent_id: %s' % self.__parent_id)
+        self.pym.PY_LOG('D', self.__class__, 'parent_name: %s' % self.__parent_name)
+        self.pym.PY_LOG('D', self.__class__, 'parent_path: %s' % self.__parent_path)
 
-        print("timestamp: %.5f" % self.timestamp)
-        print("tags: %s" % self.tags)
-        print("boundingBox height: %s" % self.boundingBox[0])
-        print("boundingBox width: %s" % self.boundingBox[1])
-        print("boundingBox left: %s" % self.boundingBox[2])
-        print("boundingBox top: %s" % self.boundingBox[3])
+        self.pym.PY_LOG('D', self.__class__, 'timestamp: %.5f' % self.__timestamp)
+        self.pym.PY_LOG('D', self.__class__, 'tags: %s' % self.__tags)
+        self.pym.PY_LOG('D', self.__class__, 'bounding box height: %s' % self.__boundingBox[BBOX_ITEM.height.value])
+        self.pym.PY_LOG('D', self.__class__, 'bounding box width: %s' % self.__boundingBox[BBOX_ITEM.width.value])
+        self.pym.PY_LOG('D', self.__class__, 'bounding box left: %s' % self.__boundingBox[BBOX_ITEM.left.value])
+        self.pym.PY_LOG('D', self.__class__, 'bounding box top: %s' % self.__boundingBox[BBOX_ITEM.top.value])
 
 
 # public
     def __init__(self, file_path):
+        self.pym = PYM.LOG()
         self.file_path = ""
         if os.path.exists(file_path):
             self.file_path = file_path
-            self.__clear_all_parameter_value()
-            print("file_path: %s" % file_path)
+            self.pym.PY_LOG('D', self.__class__, '%s existed!' % file_path)
         else:
-            print('file is not existed!!')
+            self.pym.PY_LOG('E', self.__class__, '%s is not existed!' % file_path)
     
     def read_from_id_json_data(self):
         try:
             with open(self.file_path, 'r') as reader:
-                print("open_ok")
+                self.pym.PY_LOG('D', self.__class__, '%s open ok!' % self.file_path)
                 jf = json.loads(reader.read())
-                self.asset_id = jf['asset']['id']
-                self.asset_format = jf['asset']['format']
-                self.asset_name = jf['asset']['name']
-                self.asset_path = jf['asset']['path']
-                self.video_size[0] = jf['asset']['size']['width']
-                self.video_size[1] = jf['asset']['size']['height']
-                self.timestamp = jf['asset']['timestamp']
+                self.__asset_id = jf['asset']['id']
+                self.__asset_format = jf['asset']['format']
+                self.__asset_name = jf['asset']['name']
+                self.__asset_path = jf['asset']['path']
+                self.__video_size[VIDEO_SIZE.W.value] = jf['asset']['size']['width']
+                self.__video_size[VIDEO_SIZE.H.value] = jf['asset']['size']['height']
+                self.__timestamp = jf['asset']['timestamp']
 
-                self.parent_id = jf['asset']['parent']['id']
-                self.parent_name = jf['asset']['parent']['name']
-                self.parent_path = jf['asset']['parent']['path']
+                self.__parent_id = jf['asset']['parent']['id']
+                self.__parent_name = jf['asset']['parent']['name']
+                self.__parent_path = jf['asset']['parent']['path']
 
-                self.tags = jf['regions'][0]['tags'][0]
-                self.boundingBox[0] = jf['regions'][0]['boundingBox']["height"]
-                self.boundingBox[1] = jf['regions'][0]['boundingBox']["width"]
-                self.boundingBox[2] = jf['regions'][0]['boundingBox']["left"]
-                self.boundingBox[3] = jf['regions'][0]['boundingBox']["top"]
-                print("read form json ok")
+                self.__tags = jf['regions'][0]['tags'][0]
+                self.__boundingBox[BBOX_ITEM.height.value] = jf['regions'][0]['boundingBox']["height"]
+                self.__boundingBox[BBOX_ITEM.width.value] = jf['regions'][0]['boundingBox']["width"]
+                self.__boundingBox[BBOX_ITEM.left.value] = jf['regions'][0]['boundingBox']["left"]
+                self.__boundingBox[BBOX_ITEM.top.value] = jf['regions'][0]['boundingBox']["top"]
+                self.pym.PY_LOG('D', self.__class__, '%s read ok!' % self.file_path)
                 self.__print_read_parameter_from_json()
                 reader.close() 
-            return False
         except:
-            print(' wrong format: '+ self.file_path)
-            return True
+            self.pym.PY_LOG('E', self.__class__, '%s has wrong format!' % self.file_path)
+            sys.exit()
 
     def get_asset_id(self):
-        return self.asset_id
+        return self.__asset_id
     
     def get_asset_format(self):
-        return self.asset_format
+        return self.__asset_format
     
     def get_asset_name(self):
-        return self.asset_name
+        return self.__asset_name
 
     def get_asset_path(self):
-        return self.asset_path
+        return self.__asset_path
 
     def get_parent_id(self):
-        return self.parent_id
+        return self.__parent_id
     
     def get_parent_name(self):
-        return self.parent_name
+        return self.__parent_name
     
     def get_parent_path(self):
-        return self.parent_path
+        return self.__parent_path
 
     def get_video_size(self):
-        return self.video_size
+        return self.__video_size
 
     def get_timestamp(self):
-        return self.timestamp
+        return self.__timestamp
     
     def get_tags(self):
-        return self.tags
+        return self.__tags
 
     def get_boundingBox(self):
         BX = [0,0,0,0]
-        BX[0] = self.boundingBox[2]     #x1=left
-        BX[1] = self.boundingBox[3]     #y1=top    
-        BX[2] = self.boundingBox[1]     #x2=width    
-        BX[3] = self.boundingBox[0]     #y2=height 
+        BX[0] = self.__boundingBox[BBOX_ITEM.left.value]     #x1=left
+        BX[1] = self.__boundingBox[BBOX_ITEM.top.value]     #y1=top    
+        BX[2] = self.__boundingBox[BBOX_ITEM.width.value]     #x2=width    
+        BX[3] = self.__boundingBox[BBOX_ITEM.height.value]     #y2=height 
         return BX
 
