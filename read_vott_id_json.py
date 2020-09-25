@@ -1,5 +1,5 @@
 import os
-import ujson
+import json
 
 class read_vott_id_json():
 # private
@@ -52,7 +52,7 @@ class read_vott_id_json():
         try:
             with open(self.file_path, 'r') as reader:
                 print("open_ok")
-                jf = ujson.loads(reader.read())
+                jf = json.loads(reader.read())
                 self.asset_id = jf['asset']['id']
                 self.asset_format = jf['asset']['format']
                 self.asset_name = jf['asset']['name']

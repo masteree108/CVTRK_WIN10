@@ -1,5 +1,5 @@
 import os, shutil
-import ujson
+import json
 import hashlib
 # pip install shortuuid
 import shortuuid
@@ -57,7 +57,7 @@ class write_vott_id_json():
             print(new_json_file_path)
             shutil.copyfile(json_file_path, new_json_file_path); 
             with open( new_json_file_path, 'r+') as f:
-                data = ujson.load(f)
+                data = json.load(f)
                 data['asset']['id'] = self.asset_id
                 data['asset']['format'] = self.asset_format 
                 data['asset']['name'] = self.asset_name
@@ -91,7 +91,7 @@ class write_vott_id_json():
             os.remove(new_json_file_path)
 
             with open( new_json_file_path, 'w') as f:
-                ujson.dump(data, f, indent = 4)
+                json.dump(data, f, indent = 4)
                 f.close()
 
             return False
