@@ -17,19 +17,19 @@ def fill_previous_data_to_write_json(rvij, wvij):
     
     wvij.save_tags(rvij.get_tags())
 
-    pym.PY_LOG('D', py_name , 'fill previous data ok')
+    pym.PY_LOG(False, 'D', py_name , 'fill previous data ok')
 
   
 def deal_with_name_format_path(rvij, wvij, now_frame_timestamp_DP, now_format): 
     
-    pym.PY_LOG('D', py_name, 'now_frame_timestamp_DP: %.5f' % now_frame_timestamp_DP)
-    pym.PY_LOG('D', py_name, 'now_fromat: %s' % now_format)
+    pym.PY_LOG(False, 'D', py_name, 'now_frame_timestamp_DP: %.5f' % now_frame_timestamp_DP)
+    pym.PY_LOG(False, 'D', py_name, 'now_fromat: %s' % now_format)
     org_asset_name = rvij.get_asset_name()
     org_timestamp = rvij.get_timestamp()
     org_asset_path = rvij.get_asset_path()
-    pym.PY_LOG('D', py_name, 'org_asset_name: %s' % org_asset_name)
-    pym.PY_LOG('D', py_name, 'org_timestamp: %.5f' % org_timestamp)
-    pym.PY_LOG('D', py_name, 'org_asset_path: %s' % org_asset_path)
+    pym.PY_LOG(False, 'D', py_name, 'org_asset_name: %s' % org_asset_name)
+    pym.PY_LOG(False, 'D', py_name, 'org_timestamp: %.5f' % org_timestamp)
+    pym.PY_LOG(False, 'D', py_name, 'org_asset_path: %s' % org_asset_path)
     
     org_timestamp = int(org_timestamp)
     
@@ -38,13 +38,13 @@ def deal_with_name_format_path(rvij, wvij, now_frame_timestamp_DP, now_format):
     now_timestamp = now_frame_timestamp_DP
     now_timestamp = str(org_timestamp +  now_timestamp)
     now_asset_name = org_asset_name + now_timestamp
-    pym.PY_LOG('D', py_name, 'now_frame_asset_name: %s' % now_asset_name)
-    pym.PY_LOG('D', py_name, 'now_timestamp: %s' % now_timestamp)
+    pym.PY_LOG(False, 'D', py_name, 'now_frame_asset_name: %s' % now_asset_name)
+    pym.PY_LOG(False, 'D', py_name, 'now_timestamp: %s' % now_timestamp)
     
     path_count = org_asset_path.find('=')
     org_asset_path = org_asset_path[:path_count+1]     
     now_asset_path = org_asset_path + now_timestamp
-    pym.PY_LOG('D', py_name, 'now_frame_asset_path: %s' % now_asset_path)
+    pym.PY_LOG(False,'D', py_name, 'now_frame_asset_path: %s' % now_asset_path)
 
     #this function will be created id via path by md5 method 
     wvij.save_asset_path(now_asset_path)
@@ -104,10 +104,10 @@ def main(target_path, json_file_path, video_path, algorithm):
     vott_video_fps = 15
     frame_count = cvtr.get_label_frame_number(rvij.get_asset_format(), vott_video_fps)
     if frame_count == 14:
-        pym.PY_LOG('W', py_name, 'this is the last frame at this second, so exit auto tracking!!')
+        pym.PY_LOG(False, 'W', py_name, 'this is the last frame at this second, so exit auto tracking!!')
         sys.exit()
 
-    pym.PY_LOG('D', py_name, 'user to label frame number: %d' % frame_count)
+    pym.PY_LOG(False, 'D', py_name, 'user to label frame number: %d' % frame_count)
 
     # about write data to json file  
     wvij = WVIJ.write_vott_id_json(target_path)
@@ -131,17 +131,28 @@ def main(target_path, json_file_path, video_path, algorithm):
             
             deal_with_name_format_path(rvij, wvij, now_frame_timestamp_DP, now_format)
             deal_with_BX_PT(wvij, bbox) 
-            pym.PY_LOG('D', py_name, 'frame_count: %d' % frame_count)
+            pym.PY_LOG(False, 'D', py_name, 'frame_count: %d' % frame_count)
             wvij.create_id_json_file(json_file_path)
             arrived_next_frame = False 
         cvtr.use_waitKey(1)
         if frame_count == 14:
             timer.cancel()
+            #shut_down log
+            pym.PY_LOG(True, 'D', py_name, '__done___')
+            rvij.shut_down_log('__done__')
+            wvij.shut_down_log('__done__')
+            cvtr.shut_down_log('__done__\n\n\n\n')
             break
 
 def read_file_name_path(target_path):
     #file ex:
     # file:/home/ivan/HD1/hd/VoTT/Drone_Project/Drone_Source/001/Drone_001.mp4#t=305.533333,76a8e999e2d9232d8e26253551acb4b3-asset.json
+
+    if os.path.exists(target_path):
+        pym.PY_LOG(False, 'D', py_name, 'target_path: %s existed!' % target_path)                                                                         
+    else:
+        pym.PY_LOG(False, 'E', py_name, 'target_path: %s is not existed!' % target_path)
+        sys.exit()
 
     f = open(target_path, "r") 
     # remove file:
@@ -152,12 +163,12 @@ def read_file_name_path(target_path):
     # get source video path
     vc = path.find('#')
     video_path = path[:vc]
-    pym.PY_LOG('D', py_name, 'video_path: %s' % video_path)
+    pym.PY_LOG(False, 'D', py_name, 'video_path: %s' % video_path)
 
     # get json file(this file will be crated when user used vott to label object)
     vc = path.find(',')
     file_name = path[vc+1:]
-    pym.PY_LOG('D', py_name, 'file_name: %s' % file_name)
+    pym.PY_LOG(False, 'D', py_name, 'file_name: %s' % file_name)
     
     # replace Dorne_Source to Drone_Target because from video path,
     # because we need to get the json file at Drone_Target/target_name folder
@@ -170,15 +181,17 @@ def read_file_name_path(target_path):
     l3 = temp_path.find('/')
     last_dir_path = temp_path[:l3] 
     target_path = target_path[:l2] + last_dir_path + '/'
-    pym.PY_LOG('D', py_name, 'target_path: %s' % target_path)
+    pym.PY_LOG(False, 'D', py_name, 'target_path: %s' % target_path)
     json_file_path = target_path + file_name
-    pym.PY_LOG('D', py_name, 'json_file_path: %s' % json_file_path)
+    pym.PY_LOG(False, 'D', py_name, 'json_file_path: %s' % json_file_path)
     return video_path, target_path, json_file_path
 
 
 
 if __name__ == '__main__':
-    pym = PYM.LOG()  
+    # below(True) = exports log.txt
+    pym = PYM.LOG(True)  
+
     target_path = '../../Drone_Project/Drone_Target/for_python_path.log'
     video_path, target_path, json_file_path = read_file_name_path(target_path)
     #if len(sys.argv[1]) > 1:
