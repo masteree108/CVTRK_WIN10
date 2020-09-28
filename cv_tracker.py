@@ -78,7 +78,7 @@ class CV_TRACKER():
         self.__video_cap.set(cv2.CAP_PROP_POS_MSEC, label_object_time_in_video*1000)                              
         # ex: start time at 50s
         #self.video_cap.set(cv2.CAP_PROP_POS_MSEC, 50000)
-        #self.video_cap.set(cv2.CAP_PROP_FPS, 15)  #set fps to change video,but not working!!
+        self.__video_cap.set(cv2.CAP_PROP_FPS, 15)  #set fps to change video,but not working!!
 
         # 3. setting tracker algorithm and init
         self.__tracker =  self.__get_algorithm_tracker(algorithm) 
@@ -224,5 +224,8 @@ class CV_TRACKER():
         self.pym.PY_LOG(True, 'D', self.__class__, msg)
 
 
+    def set_video_strat_frame(self, time):
+        self.__video_cap.set(cv2.CAP_PROP_POS_MSEC, time*1000)                              
 
-
+    def destroy_debug_window(self):
+        cv2.destroyWindow(self.window_name)

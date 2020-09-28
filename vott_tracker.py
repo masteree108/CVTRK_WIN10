@@ -4,7 +4,7 @@ import read_vott_id_json as RVIJ
 import write_vott_id_json as WVIJ
 import cv_tracker as CVTR 
 import log as PYM
-from threading import Timer
+#from threading import Timer
 
 ROI_get_bbox = False 
 py_name = 'vott_tracker' 
@@ -22,7 +22,7 @@ def fill_previous_data_to_write_json(rvij, wvij):
   
 def deal_with_name_format_path(rvij, wvij, now_frame_timestamp_DP, now_format): 
     
-    pym.PY_LOG(False, 'D', py_name, 'now_frame_timestamp_DP: %.5f' % now_frame_timestamp_DP)
+    pym.PY_LOG(False, 'D', py_name, 'now_frame_timestamp_DP: %.6f' % now_frame_timestamp_DP)
     pym.PY_LOG(False, 'D', py_name, 'now_fromat: %s' % now_format)
     org_asset_name = rvij.get_asset_name()
     org_timestamp = rvij.get_timestamp()
@@ -67,15 +67,14 @@ def deal_with_BX_PT(wvij, bbox):
     PT.append(BX[0]+BX[3])
     wvij.save_points(PT)
 
-def timer_isr():
-    global arrived_next_frame 
-    arrived_next_frame = True
 
-class RepeatingTimer(Timer): 
-    def run(self):
-        while not self.finished.is_set():
-            self.function(*self.args, **self.kwargs)
-            self.finished.wait(self.interval)
+def shut_down_log(pym, rvij, wvij, cvtr):
+    pym.PY_LOG(True, 'D', py_name, '__done___')
+    rvij.shut_down_log('__done__')
+    wvij.shut_down_log('__done__')
+    cvtr.shut_down_log('__done__\n\n\n\n')
+    sys.exit()
+
 
 def main(target_path, json_file_path, video_path, algorithm):
     
@@ -100,49 +99,46 @@ def main(target_path, json_file_path, video_path, algorithm):
     # ROI_get_bbox just a tester to test tracking function
     image_debug = [1, 0, 0]
     cvtr = CVTR.CV_TRACKER(algorithm, video_path, timestamp, bbox, image_debug, ROI_get_bbox)
-
-    vott_video_fps = 15
-    frame_count = cvtr.get_label_frame_number(rvij.get_asset_format(), vott_video_fps)
-    if frame_count == 14:
-        pym.PY_LOG(False, 'W', py_name, 'this is the last frame at this second, so exit auto tracking!!')
-        sys.exit()
-
-    pym.PY_LOG(False, 'D', py_name, 'user to label frame number: %d' % frame_count)
-
-    # about write data to json file  
+    
+    # about writing data to json file  
     wvij = WVIJ.write_vott_id_json(target_path)
     fill_previous_data_to_write_json(rvij, wvij)
 
+    vott_video_fps = 15
+    frame_counter = cvtr.get_label_frame_number(rvij.get_asset_format(), vott_video_fps)
+    if frame_counter == 14:
+        pym.PY_LOG(False, 'W', py_name, 'this is the last frame at this second, so exit auto tracking!!')
+        shut_down_log(pym, rvij, wvij, cvtr)
 
-    # timer setting
-    frame_interval = cvtr.get_frame_interval_for_timer_count(vott_video_fps)
-    timer = RepeatingTimer(frame_interval, timer_isr)
-    timer.start()
+    pym.PY_LOG(False, 'D', py_name, 'user to label frame number: %d' % frame_counter)
 
-    global arrived_next_frame
-    while True:
-        frame = cvtr.capture_video_frame()
-        if arrived_next_frame:
+    video_second = int(timestamp)
+    for frame_counter in range(14):
+        try:
+            frame = cvtr.capture_video_frame()
+            frame_counter += 1 
+            pym.PY_LOG(False, 'D', py_name, 'frame_counter: %d' % frame_counter)
+
+            now_frame_timestamp_DP = cvtr.get_now_frame_timestamp_DP(frame_counter, vott_video_fps)
+            next_timestamp = float(video_second) + now_frame_timestamp_DP
+            pym.PY_LOG(False, 'D', py_name, 'next_timestamp: %.6f' % next_timestamp)
             bbox = cvtr.draw_boundbing_box_and_get(frame)
-            frame_count = frame_count + 1
             
-            now_frame_timestamp_DP = cvtr.get_now_frame_timestamp_DP(frame_count, vott_video_fps)
-            now_format = cvtr.get_now_format_value(frame_count, vott_video_fps)
-            
+            # changing video start time at next_timestamp 
+            cvtr.set_video_strat_frame(next_timestamp)
+
+            now_format = cvtr.get_now_format_value(frame_counter, vott_video_fps)
             deal_with_name_format_path(rvij, wvij, now_frame_timestamp_DP, now_format)
             deal_with_BX_PT(wvij, bbox) 
-            pym.PY_LOG(False, 'D', py_name, 'frame_count: %d' % frame_count)
             wvij.create_id_json_file(json_file_path)
-            arrived_next_frame = False 
-        cvtr.use_waitKey(1)
-        if frame_count == 14:
-            timer.cancel()
-            #shut_down log
-            pym.PY_LOG(True, 'D', py_name, '__done___')
-            rvij.shut_down_log('__done__')
-            wvij.shut_down_log('__done__')
-            cvtr.shut_down_log('__done__\n\n\n\n')
+
+        except:
+            pym.PY_LOG(False, 'E', py_name, 'main loop has wrong condition!!')
+            cvtr.destroy_debug_window()
+            shut_down_log(pym, rvij, wvij, cvtr)
             break
+
+    shut_down_log(pym, rvij, wvij, cvtr)
 
 def read_file_name_path(target_path):
     #file ex:
