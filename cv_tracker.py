@@ -77,8 +77,8 @@ class CV_TRACKER():
         # *1000 because CAP_PROP_POS_MESE is millisecond
         self.__video_cap.set(cv2.CAP_PROP_POS_MSEC, label_object_time_in_video*1000)                              
         # ex: start time at 50s
-        #self.video_cap.set(cv2.CAP_PROP_POS_MSEC, 50000)
-        self.__video_cap.set(cv2.CAP_PROP_FPS, 15)  #set fps to change video,but not working!!
+        # self.video_cap.set(cv2.CAP_PROP_POS_MSEC, 50000)
+        # self.__video_cap.set(cv2.CAP_PROP_FPS, 15)  #set fps to change video,but not working!!
 
         # 3. setting tracker algorithm and init
         self.__tracker =  self.__get_algorithm_tracker(algorithm) 
@@ -189,7 +189,7 @@ class CV_TRACKER():
         self.pym.PY_LOG(False, 'D', self.__class__, 'height: %d' % hei)
         
         # below framenum / framerate = video length
-        self.pym.PY_LOG(False, 'D', self.__class__, 'framerate: %d' % frame_rate)
+        self.pym.PY_LOG(False, 'D', self.__class__, 'framerate: %.5f' % frame_rate)
         self.pym.PY_LOG(False, 'D', self.__class__, 'framenum: %d' % frame_num)
         video_length = float(frame_num / frame_rate)
         self.pym.PY_LOG(False, 'D', self.__class__, 'video length: %.5f secs' % video_length)
@@ -229,3 +229,7 @@ class CV_TRACKER():
 
     def destroy_debug_window(self):
         cv2.destroyWindow(self.window_name)
+
+    def get_source_video_fps(self):
+        return int(self.__video_cap.get(cv2.CAP_PROP_FPS))
+

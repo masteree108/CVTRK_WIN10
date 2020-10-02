@@ -4,7 +4,6 @@ import read_vott_id_json as RVIJ
 import write_vott_id_json as WVIJ
 import cv_tracker as CVTR 
 import log as PYM
-#from threading import Timer
 
 ROI_get_bbox = False 
 py_name = 'vott_tracker' 
@@ -75,23 +74,28 @@ def shut_down_log(pym, rvij, wvij, cvtr):
     cvtr.shut_down_log('__done__\n\n\n\n')
     sys.exit()
 
-
-def main(target_path, json_file_path, video_path, algorithm):
-    
+def RVIJ_class_new_and_initial(json_file_path):
     # get video's time that VoTT user to label track object 
     timestamp = 0
-
-    # get bounding box position
     bbox = ()
+
+    # class rvij that is about reading data from json file
     rvij = RVIJ.read_vott_id_json(json_file_path)
+
+    # read data
     rvij.read_from_id_json_data()
 
+    # get bounding box position
     timestamp = rvij.get_timestamp()
     get_bbox = rvij.get_boundingBox()
     bbox = (get_bbox[0], get_bbox[1], get_bbox[2],  get_bbox[3])
+
+    return rvij, timestamp, bbox
+
+
+def CVTR_class_new_and_initial(algorithm, video_path, timestamp, bbox):
+    # class cvtr that is about VoTT openCV tracker settings
     
-    
-    # VoTT cv tracker settings
     # debug mode
     # pos0: show video with bbox             
     # pos1: save image with bbox             
@@ -99,38 +103,68 @@ def main(target_path, json_file_path, video_path, algorithm):
     # ROI_get_bbox just a tester to test tracking function
     image_debug = [1, 0, 0]
     cvtr = CVTR.CV_TRACKER(algorithm, video_path, timestamp, bbox, image_debug, ROI_get_bbox)
-    
-    # about writing data to json file  
-    wvij = WVIJ.write_vott_id_json(target_path)
-    fill_previous_data_to_write_json(rvij, wvij)
+    return cvtr
 
+
+def WVIJ_class_new_and_initial(target_path):
+    # class wvij that is about writing data to json file  
+    
+    wvij = WVIJ.write_vott_id_json(target_path)
+
+    return wvij
+
+def get_loop_number_and_judge_interval(cvtr, vott_video_fps):
+    source_video_fps = cvtr.get_source_video_fps()
+    pym.PY_LOG(False, 'D', py_name, 'source_video_fps: %d' % source_video_fps)
+
+    loop_num_interval = float(source_video_fps / vott_video_fps)
+    pym.PY_LOG(False, 'D', py_name, 'loop number interval : %.2f' % loop_num_interval)
+    return source_video_fps, loop_num_interval
+
+def main(target_path, json_file_path, video_path, algorithm):
+    
+    # initial class RVIJ
+    rvij, timestamp, bbox = RVIJ_class_new_and_initial(json_file_path) 
+    
+    # initial class CVTR
+    cvtr = CVTR_class_new_and_initial(algorithm, video_path, timestamp, bbox)
+    
+    # initial class WVIJ
+    wvij = WVIJ_class_new_and_initial(target_path) 
+    
+    # saving some data from json file for into new json file using 
+    fill_previous_data_to_write_json(rvij, wvij)
+    
+    # reading and setting
     vott_video_fps = 15
     frame_counter = cvtr.get_label_frame_number(rvij.get_asset_format(), vott_video_fps)
     if frame_counter == 14:
         pym.PY_LOG(False, 'W', py_name, 'this is the last frame at this second, so exit auto tracking!!')
         shut_down_log(pym, rvij, wvij, cvtr)
-
     pym.PY_LOG(False, 'D', py_name, 'user to label frame number: %d' % frame_counter)
+  
+    # get soure_video_fps and loop_num_interval 
+    source_video_fps, loop_num_interval = get_loop_number_and_judge_interval(cvtr, vott_video_fps)
 
-    video_second = int(timestamp)
-    for frame_counter in range(14):
+    loop_counter = 0
+    loop_num = loop_num_interval
+    for loop_counter in range(source_video_fps):
         try:
             frame = cvtr.capture_video_frame()
-            frame_counter += 1 
-            pym.PY_LOG(False, 'D', py_name, 'frame_counter: %d' % frame_counter)
+            if loop_counter >= loop_num and loop_counter <= loop_num + 1:
+                # only pick up 14 frames (frist frame is user using vott to track object) from source video frames
+                frame_counter +=1
+                loop_num = loop_num + loop_num_interval
 
-            now_frame_timestamp_DP = cvtr.get_now_frame_timestamp_DP(frame_counter, vott_video_fps)
-            next_timestamp = float(video_second) + now_frame_timestamp_DP
-            pym.PY_LOG(False, 'D', py_name, 'next_timestamp: %.6f' % next_timestamp)
-            bbox = cvtr.draw_boundbing_box_and_get(frame)
-            
-            # changing video start time at next_timestamp 
-            cvtr.set_video_strat_frame(next_timestamp)
-
-            now_format = cvtr.get_now_format_value(frame_counter, vott_video_fps)
-            deal_with_name_format_path(rvij, wvij, now_frame_timestamp_DP, now_format)
-            deal_with_BX_PT(wvij, bbox) 
-            wvij.create_id_json_file(json_file_path)
+                if frame_counter < 15:                                                                                                                          
+                    pym.PY_LOG(False, 'D', py_name, 'frame_counter: %.2f' % frame_counter)
+                    now_frame_timestamp_DP = cvtr.get_now_frame_timestamp_DP(frame_counter, vott_video_fps)
+                    bbox = cvtr.draw_boundbing_box_and_get(frame)
+           
+                    now_format = cvtr.get_now_format_value(frame_counter, vott_video_fps)
+                    deal_with_name_format_path(rvij, wvij, now_frame_timestamp_DP, now_format)
+                    deal_with_BX_PT(wvij, bbox) 
+                    wvij.create_id_json_file(json_file_path)
 
         except:
             pym.PY_LOG(False, 'E', py_name, 'main loop has wrong condition!!')
@@ -141,7 +175,7 @@ def main(target_path, json_file_path, video_path, algorithm):
     shut_down_log(pym, rvij, wvij, cvtr)
 
 def read_file_name_path(target_path):
-    #file ex:
+    # file ex:
     # file:/home/ivan/HD1/hd/VoTT/Drone_Project/Drone_Source/001/Drone_001.mp4#t=305.533333,76a8e999e2d9232d8e26253551acb4b3-asset.json
 
     if os.path.exists(target_path):
