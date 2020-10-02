@@ -4,9 +4,37 @@ import read_vott_id_json as RVIJ
 import write_vott_id_json as WVIJ
 import cv_tracker as CVTR 
 import log as PYM
+import threading 
 
 ROI_get_bbox = False 
 py_name = 'vott_tracker' 
+
+class Worker(threading.Thread):
+    def __init__(self,num, lock, cvtr, rvij, wvij, send_data, pym):
+        threading.Thread.__init__(self)
+        self.num = num 
+        self.lock = lock
+        self.cvtr = cvtr
+        self.rvij = rvij
+        self.wvij = wvij
+        self.frame_counter = send_data[0]
+        self.vott_video_fps = send_data[1]
+        self.now_frame_timestamp_DP = send_data[2]
+        self.bbox = send_data[3]
+        self.json_file_path = send_data[4]
+        self.pym = pym
+    def run(self):
+        try:
+            self.pym.PY_LOG(False, 'D', py_name, "Worker num:%d __run__" % self.num)
+            self.lock.acquire()
+            now_format = self.cvtr.get_now_format_value(self.frame_counter, self.vott_video_fps)
+            deal_with_name_format_path(self.rvij, self.wvij, self.now_frame_timestamp_DP, now_format)
+            deal_with_BX_PT(self.wvij, self.bbox) 
+            self.wvij.create_id_json_file(self.json_file_path)
+            self.lock.release()
+        except:
+            self.pym.PY_LOG(True, 'E', py_name, "Worker num:%d failed" % self.num)
+            
 
 def fill_previous_data_to_write_json(rvij, wvij):
     
@@ -148,30 +176,41 @@ def main(target_path, json_file_path, video_path, algorithm):
 
     loop_counter = 0
     loop_num = loop_num_interval
+    json_file_lock = threading.Lock()  
+    thread_counter = 0
+    thread_list = []
     for loop_counter in range(source_video_fps):
         try:
             frame = cvtr.capture_video_frame()
             if loop_counter >= loop_num and loop_counter <= loop_num + 1:
                 # only pick up 14 frames (frist frame is user using vott to track object) from source video frames
-                frame_counter +=1
+                frame_counter += 1
                 loop_num = loop_num + loop_num_interval
-
-                if frame_counter < 15:                                                                                                                          
-                    pym.PY_LOG(False, 'D', py_name, 'frame_counter: %.2f' % frame_counter)
+                if frame_counter < vott_video_fps:                 
+                    pym.PY_LOG(False, 'D', py_name, 'frame_counter: %.2f start' % frame_counter)
                     now_frame_timestamp_DP = cvtr.get_now_frame_timestamp_DP(frame_counter, vott_video_fps)
                     bbox = cvtr.draw_boundbing_box_and_get(frame)
-           
-                    now_format = cvtr.get_now_format_value(frame_counter, vott_video_fps)
-                    deal_with_name_format_path(rvij, wvij, now_frame_timestamp_DP, now_format)
-                    deal_with_BX_PT(wvij, bbox) 
-                    wvij.create_id_json_file(json_file_path)
-
+                    
+                    # dealing with data and saving to a new json file
+                    send_data = []
+                    send_data.append(frame_counter)
+                    send_data.append(vott_video_fps)
+                    send_data.append(now_frame_timestamp_DP)
+                    send_data.append(bbox)
+                    send_data.append(json_file_path)
+                    thread_list.append(Worker(thread_counter, json_file_lock, cvtr, rvij, wvij, send_data, pym))
+                    thread_list[thread_counter].start()
+                    thread_counter += 1
         except:
             pym.PY_LOG(False, 'E', py_name, 'main loop has wrong condition!!')
             cvtr.destroy_debug_window()
+            for i in range(thread_counter):
+                thread_list[i].join()
             shut_down_log(pym, rvij, wvij, cvtr)
             break
 
+    for i in range(thread_counter):
+        thread_list[i].join()
     shut_down_log(pym, rvij, wvij, cvtr)
 
 def read_file_name_path(target_path):

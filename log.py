@@ -74,13 +74,9 @@ class LOG():
             now = datetime.now()
             if exit_log:
                 # shutdown saving log
-                #self.lock.acquire()
                 self.log_queue.put( "__SD__" + str(now) + " , " + str(self.message_combine))
-                #self.lock.release()
             else:
-                #self.lock.acquire()
                 self.log_queue.put(str(now) + " , " + str(self.message_combine))
-                #self.lock.release()
                 
             #print(str(now) + " , " + self.message_combine)
 
