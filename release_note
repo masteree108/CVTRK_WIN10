@@ -1,0 +1,25 @@
+Version:
+NTUT_VoTT_2020_10_13_v0.0.1
+
+Add function:
+tracking one person automatically
+
+2020/10/13
+test track functionality
+ubuntu 18.04: OK, tested by Ivan Yu
+windows 10	: OK, tested by Philip Chiang
+
+Dependence:
+ Ubuntu 18.04:
+  VoTT_NTUT/UBU18/release_note
+  CVTRK/UBU18/release_note
+
+ Windows 10:
+  VoTT_NTUT\WIN10\release_note
+  CVTRK\WIN10\release_note
+
+Not finished yet:
+cv_tracker.py:
+(1) debug mode 1: SE_IWB(save images with bounding box)
+(2) debug mode 2: SE_VWB(save video with bounging box)
+
