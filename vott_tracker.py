@@ -261,7 +261,7 @@ if __name__ == '__main__':
     # below(True) = exports log.txt
     pym = PYM.LOG(True)  
 
-    target_path = '../../Drone_Target/for_python_path.log'
+    target_path = '../../Drone_Project/Drone_Target/for_python_path.log'
     video_path, target_path, json_file_path = read_file_name_path(target_path)
     #if len(sys.argv[1]) > 1:
         #file_path = file_path + sys.argv[1]
