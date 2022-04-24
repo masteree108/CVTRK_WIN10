@@ -1,12 +1,17 @@
-# note 1: if your os is windows10 please changing build_exe.sh to build_exe.bat(it dosen't need if it runs at the cygwin terminal)
+# 1.build vott_tracker.exe
+# note 1: if your os is windows10 please execute below command on the anaconda terminal
 # note 2: this buiild_exe.sh that needs to setup module please as follows
 # pip install pyinstaller
-# note 3: chmod +x build_exe.sh
 
 pyinstaller -F --noconsole --onefile ./vott_tracker.py
-cp -f ./dist/vott_tracker ../../VoTT_NTUT/WIN10/NTUT/exe/vott_tracker.exe
-cp -f ./dist/vott_tracker ./vott_tracker.exe
-cp -af ./NTUT/yolo-coco_v3 ../../VoTT_NTUT/WIN10/NTUT
+
+# 2. copy vott_tracker.exe to the project address
+# please execute below command on the WSL terminal, it can hide above command like below
+#pyinstaller -F --noconsole --onefile ./vott_tracker.py
+# and execute ./build_exe.sh
+cp -f ./dist/vott_tracker.exe ../../VoTT_NTUT/WIN10/NTUT/exe/vott_tracker.exe
+cp -f ./dist/vott_tracker.exe ./vott_tracker.exe
+cp -af ./NTUT/yolo-coco_v3 ../../VoTT_NTUT/WIN10/NTUT/
 rm -rf dist
 rm -rf __pycache__
 rm -rf build
