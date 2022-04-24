@@ -6,6 +6,7 @@
 pyinstaller -F --noconsole --onefile ./vott_tracker.py
 cp -f ./dist/vott_tracker ../../VoTT_NTUT/WIN10/NTUT/exe/vott_tracker.exe
 cp -f ./dist/vott_tracker ./vott_tracker.exe
+cp -af ./NTUT/yolo-coco_v3 ../../VoTT_NTUT/WIN10/NTUT
 rm -rf dist
 rm -rf __pycache__
 rm -rf build
