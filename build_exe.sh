@@ -9,9 +9,9 @@ pyinstaller -F --noconsole --onefile ./vott_tracker.py
 # please execute below command on the WSL terminal, it can hide above command like below
 #pyinstaller -F --noconsole --onefile ./vott_tracker.py
 # and execute ./build_exe.sh
-cp -f ./dist/vott_tracker.exe ../../VoTT_NTUT/WIN10/NTUT/exe/vott_tracker.exe
+cp -f ./dist/vott_tracker.exe ../VoTT_NTUT_WIN10/NTUT/exe/vott_tracker.exe
 cp -f ./dist/vott_tracker.exe ./vott_tracker.exe
-cp -af ./NTUT/yolo-coco_v3 ../../VoTT_NTUT/WIN10/NTUT/
+cp -af ./NTUT/yolo-coco_v3 ../VoTT_NTUT_WIN10/NTUT/
 rm -rf dist
 rm -rf __pycache__
 rm -rf build
